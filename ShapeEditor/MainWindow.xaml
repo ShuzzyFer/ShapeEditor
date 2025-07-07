@@ -1,0 +1,437 @@
+﻿<Window x:Class="ShapeEditor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+
+
+        xmlns:local="clr-namespace:ShapeEditor"
+        xmlns:viewModels="clr-namespace:ShapeEditor.ViewModels"
+        xmlns:models="clr-namespace:ShapeEditor.Models"
+        xmlns:converters="clr-namespace:ShapeEditor.Converters"
+        xmlns:behaviors="clr-namespace:ShapeEditor.Behaviors"
+        mc:Ignorable="d"
+        Title="Shape Editor" Height="600" Width="1000"
+        WindowState="Maximized"
+        d:DataContext="{d:DesignInstance viewModels:MainViewModel, IsDesignTimeCreatable=True}">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+            <converters:DiameterConverter x:Key="DiameterConverter" />
+            <converters:NegativeRadiusConverter x:Key="NegativeRadiusConverter" />
+            <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
+            <converters:NullToBoolConverter x:Key="NullToBoolConverter" />
+            <converters:NegativeValueConverter x:Key="NegativeValueConverter" />
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="Save as _PNG..." 
+                          Command="{Binding SaveAsPngCommand}"
+                          CommandParameter="{Binding ElementName=ShapesItemsControl}"/>
+                <MenuItem Header="Save as _SVG..."
+                          Command="{Binding SaveAsSvgCommand}" />
+                <Separator />
+                <MenuItem Header="E_xit" Click="Exit_Click" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="10">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" MinWidth="200" /> <!-- Список фигур -->
+                <ColumnDefinition Width="Auto" /> <!-- Разделитель -->
+                <ColumnDefinition Width="300" MinWidth="250" /> <!-- Панель добавления/редактирования -->
+                <ColumnDefinition Width="Auto" /> <!-- Разделитель -->
+                <ColumnDefinition Width="3*" MinWidth="300" /> <!-- Canvas для визуализации -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Колонка 0: Список фигур -->
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Shapes List:" FontWeight="Bold" Margin="0,0,0,5" />
+                <ListView ItemsSource="{Binding Shapes}"
+                          SelectedItem="{Binding SelectedShape}"
+                          MinHeight="200"
+                          MaxHeight="500"
+                          HorizontalContentAlignment="Stretch">
+                    <ListView.ItemTemplate>
+                        <DataTemplate DataType="{x:Type models:GeometricObject}">
+                            <TextBlock Text="{Binding Details}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <Button Content="Remove Selected Shape"
+                        Command="{Binding RemoveShapeCommand}"
+                        Margin="0,10,0,0" />
+            </StackPanel>
+
+            <GroupBox Header="Layer Order" Margin="0,260,0,0"
+                      IsEnabled="{Binding SelectedShape, Converter={StaticResource NullToBoolConverter}}">
+                <!-- IsEnabled привязан к наличию SelectedShape. NullToBoolConverter нужно будет создать. -->
+                <StackPanel>
+                    <Button Content="Bring to Front" Command="{Binding BringToFrontCommand}" Margin="2" />
+                    <Button Content="Send to Back" Command="{Binding SendToBackCommand}" Margin="2" />
+                    <Button Content="Bring Forward" Command="{Binding BringForwardCommand}" Margin="2" />
+                    <Button Content="Send Backward" Command="{Binding SendBackwardCommand}" Margin="2" />
+                </StackPanel>
+            </GroupBox>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+
+            <!-- Колонка 2: Панель добавления/редактирования -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="10,0,0,0">
+                    <TextBlock Text="Add New Shape:" FontWeight="Bold" Margin="0,0,0,10" />
+
+                    <TextBlock Text="Stroke Color:" Margin="0,5,0,2" />
+                    <xctk:ColorPicker SelectedColor="{Binding NewShapeStrokeColor, Mode=TwoWay}"
+                                      DisplayColorAndName="True" />
+
+                    <TextBlock Text="Fill Color:" Margin="0,5,0,2" />
+                    <xctk:ColorPicker SelectedColor="{Binding NewShapeFillColor, Mode=TwoWay}"
+                                      DisplayColorAndName="True" />
+
+                    <Border BorderBrush="LightGray" BorderThickness="0,1,0,0" Margin="0,15,0,10" />
+
+                    <TextBlock Text="Shape Type:" />
+                    <ComboBox ItemsSource="{Binding Source={StaticResource ShapeTypeValues}}"
+                              SelectedItem="{Binding SelectedShapeTypeToAdd}" Margin="0,0,0,10" />
+
+                    <!-- Панель для добавления Точки -->
+                    <StackPanel
+                        Visibility="{Binding SelectedShapeTypeToAdd, ConverterParameter={x:Static viewModels:ShapeType.Point}, Converter={StaticResource EnumToVisibilityConverter}}">
+                        <TextBlock Text="Name:" />
+                        <TextBox Text="{Binding NewPointName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                        <TextBlock Text="X Coordinate:" />
+                        <TextBox Text="{Binding NewPointX, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                        <TextBlock Text="Y Coordinate:" />
+                        <TextBox Text="{Binding NewPointY, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                    </StackPanel>
+
+                    <!-- Панель для добавления Окружности -->
+                    <StackPanel
+                        Visibility="{Binding SelectedShapeTypeToAdd, ConverterParameter={x:Static viewModels:ShapeType.Circle}, Converter={StaticResource EnumToVisibilityConverter}}">
+                        <TextBlock Text="Name:" />
+                        <TextBox Text="{Binding NewCircleName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                        <TextBlock Text="Center X:" />
+                        <TextBox Text="{Binding NewCircleCenterX, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                        <TextBlock Text="Center Y:" />
+                        <TextBox Text="{Binding NewCircleCenterY, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                        <TextBlock Text="Radius:" />
+                        <TextBox Text="{Binding NewCircleRadius, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Visibility="{Binding SelectedShapeTypeToAdd, ConverterParameter={x:Static viewModels:ShapeType.Rectangle}, Converter={StaticResource EnumToVisibilityConverter}}">
+                        <TextBlock Text="Name:" />
+                        <TextBox Text="{Binding NewRectangleName, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                        <TextBlock Text="X:" />
+                        <TextBox Text="{Binding NewRectangleX, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                        <TextBlock Text="Y:" />
+                        <TextBox Text="{Binding NewRectangleY, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                        <TextBlock Text="Height:" />
+                        <TextBox Text="{Binding NewRectangleHeight, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                        <TextBlock Text="Width:" />
+                        <TextBox Text="{Binding NewRectangleWidth, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Visibility="{Binding SelectedShapeTypeToAdd, ConverterParameter={x:Static viewModels:ShapeType.Ellipse}, Converter={StaticResource EnumToVisibilityConverter}}">
+                        <TextBlock Text="Name:" />
+                        <TextBox Text="{Binding NewEllipseName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5" />
+                        <TextBlock Text="X:" />
+                        <TextBox Text="{Binding NewEllipseCenterX, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                        <TextBlock Text="Y:" />
+                        <TextBox Text="{Binding NewEllipseCenterY, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                        <TextBlock Text="Radius X:" />
+                        <TextBox Text="{Binding NewEllipseRadiusX, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                        <TextBlock Text="Radius Y:" />
+                        <TextBox Text="{Binding NewEllipseRadiusY, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,5" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Visibility="{Binding SelectedShapeTypeToAdd, ConverterParameter={x:Static viewModels:ShapeType.Custom}, Converter={StaticResource EnumToVisibilityConverter}}">
+                        <Button Content="Create New Custom Shape..."
+                                Command="{Binding AddShapeCommand}"
+                                Margin="0,10,0,0" />
+                    </StackPanel>
+
+                    <Button Content="Add Point" Command="{Binding AddShapeCommand}" />
+                    
+                    <Border BorderBrush="LightGray" BorderThickness="0,1,0,0" Margin="0,20,0,10" />
+                    <TextBlock Text="Selected Shape Details:" FontWeight="Bold" Margin="0,0,0,5"
+                               Visibility="{Binding SelectedShape, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" />
+
+                    <!-- ОБЩИЕ СВОЙСТВА -->
+                    <StackPanel
+                        Visibility="{Binding SelectedShape, Converter={StaticResource NullToVisibilityConverter}}">
+                        <TextBlock Text="Stroke Thickness:" Margin="5,5,0,0" />
+                        <Slider Minimum="1" Maximum="20"
+                                Value="{Binding SelectedShape.StrokeThickness, Mode=TwoWay}"
+                                TickFrequency="1" IsSnapToTickEnabled="True" />
+                        <TextBlock Text="Stroke Color:" Margin="5,5,0,2" />
+                        <xctk:ColorPicker SelectedColor="{Binding SelectedShape.StrokeColor, Mode=TwoWay}"
+                                          DisplayColorAndName="True" />
+
+                        <TextBlock Text="Fill Color:" Margin="5,5,0,2" />
+                        <xctk:ColorPicker SelectedColor="{Binding SelectedShape.FillColor, Mode=TwoWay}"
+                                          DisplayColorAndName="True" />
+                    </StackPanel>
+
+                    <Border BorderBrush="LightGray" BorderThickness="0,1,0,0" Margin="0,10,0,5" />
+
+                    <ContentControl Content="{Binding SelectedShape}">
+                        <ContentControl.Resources>
+                            <!-- DataTemplate для PointObject -->
+                            <DataTemplate DataType="{x:Type models:PointObject}">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding Name, StringFormat='Name: {0}'}" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="X: " Width="70" />
+                                        <TextBox Text="{Binding X, UpdateSourceTrigger=PropertyChanged}" MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Y: " Width="70" />
+                                        <TextBox Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}" MinWidth="50" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                            
+                            <DataTemplate DataType="{x:Type models:CircleObject}">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding Name, StringFormat='Name: {0}'}" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Center X: " Width="70" />
+                                        <TextBox Text="{Binding CenterX, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Center Y: " Width="70" />
+                                        <TextBox Text="{Binding CenterY, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Radius: " Width="70" />
+                                        <TextBox Text="{Binding Radius, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                            
+                            <DataTemplate DataType="{x:Type models:RectangleObject}">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding Name, StringFormat='Name: {0}'}" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="X: " Width="70" />
+                                        <TextBox Text="{Binding X, UpdateSourceTrigger=PropertyChanged}" MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Y: " Width="70" />
+                                        <TextBox Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}" MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Width: " Width="70" />
+                                        <TextBox Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Height: " Width="70" />
+                                        <TextBox Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                            
+                            <DataTemplate DataType="{x:Type models:EllipseObject}">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding Name, StringFormat='Name: {0}'}" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Center X: " Width="70" />
+                                        <TextBox Text="{Binding CenterX, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Center Y: " Width="70" />
+                                        <TextBox Text="{Binding CenterY, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Radius X: " Width="70" />
+                                        <TextBox Text="{Binding RadiusX, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="Radius Y: " Width="70" />
+                                        <TextBox Text="{Binding RadiusY, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="50" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+
+                            <DataTemplate DataType="{x:Type models:CustomPathObject}">
+                                <Path ToolTip="{Binding Details}" Cursor="SizeAll"
+                                      Data="{Binding DefiningGeometry}">
+                                    <Path.Fill>
+                                        <SolidColorBrush Color="{Binding FillColor}" />
+                                    </Path.Fill>
+                                    <Path.Stroke>
+                                        <SolidColorBrush Color="{Binding StrokeColor}" />
+                                    </Path.Stroke>
+                                    <Path.StrokeThickness>
+                                        <Binding Path="StrokeThickness" />
+                                    </Path.StrokeThickness>
+                                </Path>
+                            </DataTemplate>
+
+                            <!-- Fallback DataTemplate (оставляем на случай, если для какой-то фигуры нет шаблона) -->
+                            <DataTemplate DataType="{x:Type models:GeometricObject}">
+                                <TextBlock Text="{Binding Details}" FontStyle="Italic" Margin="5" />
+                            </DataTemplate>
+                        </ContentControl.Resources>
+                    </ContentControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+
+            <!-- Колонка 4: Canvas для визуализации -->
+            <Border Grid.Column="4" BorderBrush="DarkGray" BorderThickness="1" Margin="10,0,0,0">
+                <Viewbox Stretch="Uniform">
+                    <ItemsControl x:Name="ShapesItemsControl" ItemsSource="{Binding Shapes}">
+                        
+                        <b:Interaction.Behaviors>
+                            <behaviors:CanvasInteractionBehavior
+                                ItemsSource="{Binding Shapes}"
+                                SelectedItem="{Binding SelectedShape, Mode=TwoWay}" />
+                        </b:Interaction.Behaviors>
+
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Background="WhiteSmoke" Width="800" Height="600" ClipToBounds="True" 
+                                        x:Name="DrawingCanvas"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding CanvasPositionX, Mode=OneWay}" />
+                                <Setter Property="Canvas.Top" Value="{Binding CanvasPositionY, Mode=OneWay}" />
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+
+                        <ItemsControl.Resources>
+                            <!-- DataTemplate для PointObject на Canvas -->
+                            <DataTemplate DataType="{x:Type models:PointObject}">
+                                <Ellipse ToolTip="{Binding Details}"
+                                         Cursor="SizeAll"> <!-- Добавим курсор, чтобы показать, что объект можно двигать -->
+                                    <Ellipse.RenderTransform>
+                                        <TranslateTransform X="-4" Y="-4" />
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Stroke>
+                                        <SolidColorBrush Color="{Binding StrokeColor}" />
+                                    </Ellipse.Stroke>
+                                    <Ellipse.StrokeThickness>
+                                        <Binding Path="StrokeThickness" />
+                                    </Ellipse.StrokeThickness>
+                                    <Ellipse.Fill>
+                                        <SolidColorBrush Color="{Binding FillColor}" />
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                            </DataTemplate>
+
+                            <DataTemplate DataType="{x:Type models:CustomPathObject}">
+                                <Path ToolTip="{Binding Details}" Cursor="SizeAll"
+                                      Data="{Binding DefiningGeometry}">
+                                    <Path.RenderTransform>
+                                        <TranslateTransform
+                                            X="{Binding DefiningGeometry.Bounds.Left, Converter={StaticResource NegativeValueConverter}}"
+                                            Y="{Binding DefiningGeometry.Bounds.Top, Converter={StaticResource NegativeValueConverter}}" />
+                                    </Path.RenderTransform>
+                                    <Path.Fill>
+                                        <SolidColorBrush Color="{Binding FillColor}" />
+                                    </Path.Fill>
+                                    <Path.Stroke>
+                                        <SolidColorBrush Color="{Binding StrokeColor}" />
+                                    </Path.Stroke>
+                                    <Path.StrokeThickness>
+                                        <Binding Path="StrokeThickness" />
+                                    </Path.StrokeThickness>
+                                </Path>
+                            </DataTemplate>
+
+                            <!-- DataTemplate для CircleObject на Canvas -->
+                            <DataTemplate DataType="{x:Type models:CircleObject}">
+                                <Grid ToolTip="{Binding Details}" Cursor="SizeAll">
+                                    <Ellipse Width="{Binding Radius, Converter={StaticResource DiameterConverter}}"
+                                             Height="{Binding Radius, Converter={StaticResource DiameterConverter}}">
+                                        <Ellipse.RenderTransform>
+                                            <TranslateTransform
+                                                X="{Binding Radius, Converter={StaticResource NegativeRadiusConverter}}"
+                                                Y="{Binding Radius, Converter={StaticResource NegativeRadiusConverter}}" />
+                                        </Ellipse.RenderTransform>
+                                        <Ellipse.Stroke>
+                                            <SolidColorBrush Color="{Binding StrokeColor}" />
+                                        </Ellipse.Stroke>
+                                        <Ellipse.StrokeThickness>
+                                            <Binding Path="StrokeThickness" />
+                                        </Ellipse.StrokeThickness>
+                                        <Ellipse.Fill>
+                                            <SolidColorBrush Color="{Binding FillColor}" />
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                </Grid>
+                            </DataTemplate>
+                            <DataTemplate DataType="{x:Type models:RectangleObject}">
+                                <Rectangle Width="{Binding Width}"
+                                           Height="{Binding Height}"
+                                           Cursor="SizeAll"
+                                           ToolTip="{Binding Details}">
+                                    <Rectangle.Stroke>
+                                        <SolidColorBrush Color="{Binding StrokeColor}" />
+                                    </Rectangle.Stroke>
+                                    <Rectangle.StrokeThickness>
+                                        <Binding Path="StrokeThickness" />
+                                    </Rectangle.StrokeThickness>
+                                    <Rectangle.Fill>
+                                        <SolidColorBrush Color="{Binding FillColor}" />
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </DataTemplate>
+                            <DataTemplate DataType="{x:Type models:EllipseObject}">
+                                <!-- Эллипс рисуется в bounding box, поэтому не нужен RenderTransform -->
+                                <Ellipse Width="{Binding RadiusX, Converter={StaticResource DiameterConverter}}"
+                                         Height="{Binding RadiusY, Converter={StaticResource DiameterConverter}}"
+                                         Cursor="SizeAll"
+                                         ToolTip="{Binding Details}">
+                                    <Ellipse.Stroke>
+                                        <SolidColorBrush Color="{Binding StrokeColor}" />
+                                    </Ellipse.Stroke>
+                                    <Ellipse.StrokeThickness>
+                                        <Binding Path="StrokeThickness" />
+                                    </Ellipse.StrokeThickness>
+                                    <Ellipse.Fill>
+                                        <SolidColorBrush Color="{Binding FillColor}" />
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                            </DataTemplate>
+                        </ItemsControl.Resources>
+                    </ItemsControl>
+                </Viewbox>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
