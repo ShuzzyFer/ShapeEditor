@@ -35,6 +35,7 @@ The editor supports a wide range of functionalities, from basic shape creation t
 - **Vector & Raster Export:** Export the canvas to industry-standard formats.
   - **PNG Export:** Save a high-resolution raster snapshot of the canvas.
   - **SVG Export:** Save a resolution-independent vector file, preserving all shapes, colors, and properties. This file can be opened in other vector editors like Inkscape or Adobe Illustrator.
+  
   ![Export Menu](docs/images/SaveOptions.png)
 
 ## 🛠️ Technical Implementation
@@ -60,3 +61,6 @@ This project is built on a solid technical foundation, emphasizing best practice
 1. Clone the repository:
    ```bash
    git clone https://github.com/YourUsername/ShapeEditor.git
+2. Open ShapeEditor.sln in Visual Studio 2022 or later.
+3. Restore the NuGet packages (this should happen automatically).
+4. Build and run the project (press F5).
