@@ -6,7 +6,6 @@
 
 **ShapeEditor** is a feature-rich 2D vector graphics editor developed using **WPF (Windows Presentation Foundation)** and C#. This project demonstrates a deep understanding of desktop application development, adhering to the **MVVM (Model-View-ViewModel)** architectural pattern for a clean, scalable, and testable codebase.
 
-The application serves as a powerful portfolio piece, showcasing skills relevant to complex graphical software development, similar to what's found in CAD/PLM systems.
 
 ## ✨ Features
 
