@@ -18,7 +18,7 @@ The editor supports a wide range of functionalities, from basic shape creation t
   - Rectangles
   - Ellipses
 - **Custom Shape Drawing:** A dedicated modal editor allows users to draw their own freeform shapes with the mouse, which are then saved as reusable objects.
-  ![Custom Shape Editor](docs/images/CustomEditor.png)
+  ![Custom Shape Editor](docs/images/CustomEdit.png)
 - **Object Properties:** Full control over visual properties for any selected shape:
   - **Stroke:** Change color and thickness.
   - **Fill:** Apply solid color fills, with a user-friendly color picker.
