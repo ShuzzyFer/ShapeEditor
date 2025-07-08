@@ -1,6 +1,6 @@
 # ShapeEditor - 2D Vector Graphics Editor
 
-![Main Window Screenshot](docs/images/MainWindow.png)
+![Main Window Screenshot](docs/images/MainScreen.png)
 
 ## 📝 Overview
 
